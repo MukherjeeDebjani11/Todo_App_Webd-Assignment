@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo List App</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2980b9;
+            --delete-color: #e74c3c;
+            --complete-color: #2ecc71;
+            --bg-color: #f5f6fa;
+            --item-bg: white;
+            --text-color: #333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: var(--item-bg);
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        h1 {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .input-section {
+            display: flex;
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        #todo-input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        #todo-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .add-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin-left: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .add-button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        #todo-list {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .todo-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        .todo-text {
+            flex: 1;
+            font-size: 16px;
+            word-break: break-word;
+            transition: text-decoration 0.3s, color 0.3s;
+        }
+
+        .todo-item.completed .todo-text {
+            text-decoration: line-through;
+            color: #888;
+        }
+
+        .action-button {
+            margin-left: 10px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .complete-button {
+            background-color: var(--complete-color);
+            color: white;
+        }
+
+        .delete-button {
+            background-color: var(--delete-color);
+            color: white;
+        }
+
+        .empty-list {
+            text-align: center;
+            padding: 30px;
+            color: #888;
+            font-style: italic;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            font-size: 14px;
+            color: #888;
+        }
+
+        /* Dark mode toggle */
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        /* Responsive design */
+        @media (max-width: 500px) {
+            .input-section {
+                flex-direction: column;
+            }
+            
+            .add-button {
+                margin-left: 0;
+                margin-top: 10px;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>My Todo List</h1>
+        
+        <div class="input-section">
+            <input type="text" id="todo-input" placeholder="Add a new task...">
+            <button class="add-button" onclick="addTodo()">Add</button>
+        </div>
+        
+        <ul id="todo-list">
+            <!-- Todo items will be added here -->
+            <li class="empty-list">Your todo list is empty. Add a task to get started!</li>
+        </ul>
+    </div>
+    
+    <div class="footer">
+        Created with ❤️ | Total Tasks: <span id="task-count">0</span>
+    </div>
+    
+    <script>
+        // Get DOM elements
+        const todoInput = document.getElementById('todo-input');
+        const todoList = document.getElementById('todo-list');
+        const taskCount = document.getElementById('task-count');
+        let todos = [];
+        
+        // Add event listener for Enter key
+        todoInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addTodo();
+            }
+        });
+        
+        // Function to add a new todo
+        function addTodo() {
+            const todoText = todoInput.value.trim();
+            
+            if (todoText === '') {
+                todoInput.classList.add('error');
+                setTimeout(() => todoInput.classList.remove('error'), 300);
+                return;
+            }
+            
+            // Remove empty list message if it exists
+            const emptyMessage = document.querySelector('.empty-list');
+            if (emptyMessage) {
+                emptyMessage.remove();
+            }
+            
+            // Create a new todo item
+            const todoItem = {
+                id: Date.now(),
+                text: todoText,
+                completed: false
+            };
+            
+            // Add to todos array
+            todos.push(todoItem);
+            
+            // Add to DOM
+            renderTodo(todoItem);
+            
+            // Clear input
+            todoInput.value = '';
+            
+            // Update count
+            updateTaskCount();
+        }
+        
+        // Render a todo item in the DOM
+        function renderTodo(todo) {
+            const li = document.createElement('li');
+            li.className = 'todo-item';
+            li.id = `todo-${todo.id}`;
+            
+            li.innerHTML = `
+                <span class="todo-text">${todo.text}</span>
+                <button class="action-button complete-button" onclick="toggleComplete(${todo.id})">✓</button>
+                <button class="action-button delete-button" onclick="deleteTodo(${todo.id})">✕</button>
+            `;
+            
+            todoList.appendChild(li);
+        }
+        
+        // Toggle todo completion status
+        function toggleComplete(id) {
+            const todoIndex = todos.findIndex(todo => todo.id === id);
+            todos[todoIndex].completed = !todos[todoIndex].completed;
+            
+            const todoItem = document.getElementById(`todo-${id}`);
+            if (todos[todoIndex].completed) {
+                todoItem.classList.add('completed');
+            } else {
+                todoItem.classList.remove('completed');
+            }
+        }
+        
+        // Delete a todo
+        function deleteTodo(id) {
+            const todoItem = document.getElementById(`todo-${id}`);
+            todoItem.style.animation = 'fadeOut 0.3s';
+            
+            setTimeout(() => {
+                todos = todos.filter(todo => todo.id !== id);
+                todoItem.remove();
+                updateTaskCount();
+                
+                // Show empty list message if no todos left
+                if (todos.length === 0) {
+                    todoList.innerHTML = '<li class="empty-list">Your todo list is empty. Add a task to get started!</li>';
+                }
+            }, 300);
+        }
+        
+        // Update task count
+        function updateTaskCount() {
+            taskCount.textContent = todos.length;
+        }
+    </script>
+</body>
+</html>
